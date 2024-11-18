@@ -23,8 +23,10 @@ THREEx.ArPatternFile.encodeImage = function(image){
 	// copy image on canvas
 	var canvas = document.createElement('canvas');
 	var context = canvas.getContext('2d')
-	canvas.width = 16;
-	canvas.height = 16;
+	canvas.width = 32;
+	canvas.height = 32;
+	//canvas.width = 16;
+	//canvas.height = 16;
 
 	// document.body.appendChild(canvas)
 	// canvas.style.width = '200px'
