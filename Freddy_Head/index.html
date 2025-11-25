@@ -6,20 +6,35 @@
   </head>
 
   <body>
-    <a-scene mindar-face="occluder: false"
+    <a-scene mindar-face
              embedded
              color-space="sRGB"
              renderer="colorManagement: true, physicallyCorrectLights"
              vr-mode-ui="enabled: false"
              device-orientation-permission-ui="enabled: false">
-
+      
       <a-camera active="false" position="0 0 0"></a-camera>
 
       <a-entity mindar-face-target="anchorIndex: 1">
-        <a-sphere color="green"  position="0 0 -1" radius=".75"></a-sphere>
-
+        <a-sphere color="green" position="0 0 -1" radius=".75"></a-sphere>
       </a-entity>
-
     </a-scene>
+
+    <script>
+      AFRAME.scenes[0].addEventListener("loaded", () => {
+        const faceComp = AFRAME.scenes[0].systems["mindar-face-system"];
+
+        faceComp.ready.then(() => {
+          const faceMesh = faceComp.mindarThree.faceMesh;
+
+          // Disable occlusion
+          faceMesh.material.depthWrite = false;
+          faceMesh.material.depthTest = false;
+
+          console.log("Face occlusion disabled ✔️");
+        });
+      });
+    </script>
+
   </body>
 </html>
