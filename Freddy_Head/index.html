@@ -16,12 +16,11 @@
       <a-camera active="false" position="0 0 0"></a-camera>
 
       <a-entity mindar-face-target="anchorIndex: 1">
-<a-entity
-  position="0 0 -1"
-  scale="0.75 0.75 0.75"
-  obj-model="obj: url(fred_head.obj)"
-  material="depthTest: false; depthWrite: false;"
-></a-entity>
+        <a-entity
+          position="0 0 -1"
+          scale="1 1 1"
+          obj-model="obj: url(fred_head.obj); mtl: url(fred_head.mtl)"
+        ></a-entity>
       </a-entity>
 
     </a-scene>
