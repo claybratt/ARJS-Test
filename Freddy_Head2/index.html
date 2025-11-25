@@ -24,5 +24,23 @@
       </a-entity>
 
     </a-scene>
+        <script>
+    AFRAME.scenes[0].addEventListener("loaded", () => {
+      const sceneEl = AFRAME.scenes[0];
+
+      sceneEl.addEventListener("model-loaded", (e) => {
+        const mesh = e.detail.model;
+
+        mesh.traverse((node) => {
+          if (node.isMesh && node.material) {
+            node.material.depthTest = false;
+            node.material.depthWrite = false;
+          }
+        });
+
+        console.log("Depth disabled on OBJ materials ✔");
+      });
+    });
+    </script>
   </body>
 </html>
