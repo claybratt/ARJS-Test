@@ -18,11 +18,34 @@
       <a-entity mindar-face-target="anchorIndex: 1">
         <a-entity
           position="0 0 -1"
-          scale="1 1 1"
+          scale=".9 .9 .9"
           obj-model="obj: url(fred_head.obj); mtl: url(fred_head.mtl)"
         ></a-entity>
       </a-entity>
 
     </a-scene>
+
+    <!-- 👇 add this right after the scene -->
+    <script>
+      document.querySelector("a-scene").addEventListener("arReady", () => {
+        const sceneEl = document.querySelector("a-scene");
+        const faceSystem = sceneEl.systems["mindar-face-system"];
+        const faceMesh = faceSystem.mindarThree.faceMesh;
+
+        faceMesh.traverse((node) => {
+          if (node.isMesh && node.material) {
+            if (Array.isArray(node.material)) {
+              node.material.forEach((m) => {
+                m.depthWrite = false;
+              });
+            } else {
+              node.material.depthWrite = false;
+            }
+          }
+        });
+
+        console.log("Disabled depthWrite on MindAR face mesh ✔");
+      });
+    </script>
   </body>
 </html>
