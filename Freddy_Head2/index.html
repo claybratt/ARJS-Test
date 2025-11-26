@@ -24,23 +24,28 @@
       </a-entity>
 
     </a-scene>
-        <script>
-    AFRAME.scenes[0].addEventListener("loaded", () => {
-      const sceneEl = AFRAME.scenes[0];
 
-      sceneEl.addEventListener("model-loaded", (e) => {
-        const mesh = e.detail.model;
+    <!-- 👇 add this right after the scene -->
+    <script>
+      document.querySelector("a-scene").addEventListener("arReady", () => {
+        const sceneEl = document.querySelector("a-scene");
+        const faceSystem = sceneEl.systems["mindar-face-system"];
+        const faceMesh = faceSystem.mindarThree.faceMesh;
 
-        mesh.traverse((node) => {
+        faceMesh.traverse((node) => {
           if (node.isMesh && node.material) {
-            node.material.depthTest = false;
-            node.material.depthWrite = false;
+            if (Array.isArray(node.material)) {
+              node.material.forEach((m) => {
+                m.depthWrite = false;
+              });
+            } else {
+              node.material.depthWrite = false;
+            }
           }
         });
 
-        console.log("Depth disabled on OBJ materials ✔");
+        console.log("Disabled depthWrite on MindAR face mesh ✔");
       });
-    });
     </script>
   </body>
 </html>
