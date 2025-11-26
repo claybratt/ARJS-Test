@@ -4,7 +4,6 @@
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-face-aframe.prod.js"></script>
   </head>
-
   <body>
     <a-scene mindar-face
              embedded
@@ -14,7 +13,6 @@
              device-orientation-permission-ui="enabled: false">
 
       <a-camera active="false" position="0 0 0"></a-camera>
-
       <a-entity mindar-face-target="anchorIndex: 1">
         <a-entity
           position="0 0 -1"
@@ -23,16 +21,5 @@
         ></a-entity>
       </a-entity>
     </a-scene>
-
-    <script>
-      // When MindAR is ready, switch to the rear camera
-      document.querySelector("a-scene").addEventListener("arReady", () => {
-        const faceSystem = document.querySelector("a-scene")
-          .systems["mindar-face-system"];
-
-        console.log("MindAR initialized, switching camera...");
-        faceSystem.switchCamera("environment"); // <-- switches from front → back
-      });
-    </script>
   </body>
 </html>
