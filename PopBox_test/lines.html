@@ -31,16 +31,24 @@ AFRAME.registerComponent('run', {
     {
         this.m0 = document.querySelector("#m0");
         this.m1 = document.querySelector("#m1");
+        this.m2 = document.querySelector("#m2");
+        this.m3 = document.querySelector("#m3");
+        this.m4 = document.querySelector("#m4");
+		
         this.p0 = new THREE.Vector3();
         this.p1 = new THREE.Vector3(); 
+        this.p2 = new THREE.Vector3(); 
+        this.p3 = new THREE.Vector3(); 
+        this.p4 = new THREE.Vector3(); 
         
         let geometry = new THREE.CylinderGeometry( 0.05, 0.05, 1, 12 );
         geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0.5, 0 ) );
         geometry.applyMatrix( new THREE.Matrix4().makeRotationX( THREE.Math.degToRad( 90 ) ) );
         let material = new THREE.MeshLambertMaterial( {color: 0xFF0000} );
-        this.cylinder = new THREE.Mesh( geometry, material );
-        this.cylinderGroup = document.querySelector('#cylinderGroup').object3D;
-        this.cylinderGroup.add( this.cylinder );
+		
+        this.cylinder0 = new THREE.Mesh( geometry, material );
+        this.cylinderGroup0 = document.querySelector('#cylinderGroup0').object3D;
+        this.cylinderGroup0.add( this.cylinder0 );
     },
     
     tick: function (time, deltaTime) 
@@ -51,14 +59,15 @@ AFRAME.registerComponent('run', {
             this.m1.object3D.getWorldPosition(this.p1);
             
             let distance = this.p0.distanceTo( this.p1 );
-            this.cylinderGroup.lookAt( this.p1 );            
-            this.cylinder.scale.set(1,1,distance);
-            this.cylinder.visible = true;
+            this.cylinderGroup0.lookAt( this.p1 );            
+            this.cylinder0.scale.set(1,1,distance);
+            this.cylinder0.visible = true;
         }
         else
         {
-            this.cylinder.visible = false;
+            this.cylinder0.visible = false;
         }
+		
     }
 });
 
@@ -73,20 +82,31 @@ AFRAME.registerComponent('run', {
     <a-marker type="barcode" value="0" id="m0" registerevents>
         <a-sphere radius="0.10" color="red"></a-sphere>
         <!-- this group rotates the cylinder to point at marker m1 -->
-        <a-entity id="cylinderGroup"></a-entity>
+        <a-entity id="cylinderGroup0"></a-entity>
     </a-marker>
 
     <a-marker type="barcode" value="1" id="m1" registerevents>
         <a-sphere radius="0.10" color="red"></a-sphere>
-    </a-marker>
-    
-    <a-marker type="pattern" url="data/kanji.patt" id="baseMarker" >
+        <a-entity id="cylinderGroup1"></a-entity>
     </a-marker>
 
+    <a-marker type="barcode" value="2" id="m2" registerevents>
+        <a-sphere radius="0.10" color="red"></a-sphere>
+        <a-entity id="cylinderGroup2"></a-entity>
+    </a-marker>
+
+    <a-marker type="barcode" value="3" id="m3" registerevents>
+        <a-sphere radius="0.10" color="red"></a-sphere>
+        <a-entity id="cylinderGroup3"></a-entity>
+    </a-marker>
+
+    <a-marker type="barcode" value="4" id="m4" registerevents>
+        <a-sphere radius="0.10" color="red"></a-sphere>
+        <a-entity id="cylinderGroup4"></a-entity>
+    </a-marker>
+	
     <a-entity camera></a-entity>
-
     <a-entity run></a-entity>
-
 </a-scene>
 </body>
 </html>
