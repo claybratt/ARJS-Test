@@ -47,8 +47,17 @@ AFRAME.registerComponent('run', {
         let material = new THREE.MeshLambertMaterial( {color: 0xFF0000} );
 		
         this.cylinder0 = new THREE.Mesh( geometry, material );
+        this.cylinder1 = new THREE.Mesh( geometry, material );
+        this.cylinder2 = new THREE.Mesh( geometry, material );
+        this.cylinder3 = new THREE.Mesh( geometry, material );
         this.cylinderGroup0 = document.querySelector('#cylinderGroup0').object3D;
+        this.cylinderGroup1 = document.querySelector('#cylinderGroup0').object3D;
+        this.cylinderGroup2 = document.querySelector('#cylinderGroup0').object3D;
+        this.cylinderGroup3 = document.querySelector('#cylinderGroup0').object3D;
         this.cylinderGroup0.add( this.cylinder0 );
+        this.cylinderGroup1.add( this.cylinder1 );
+        this.cylinderGroup2.add( this.cylinder2 );
+        this.cylinderGroup3.add( this.cylinder3 );
     },
     
     tick: function (time, deltaTime) 
@@ -68,6 +77,50 @@ AFRAME.registerComponent('run', {
             this.cylinder0.visible = false;
         }
 		
+        if ( markerVisible["m1"] && markerVisible["m2"] )
+        {
+            this.m1.object3D.getWorldPosition(this.p1);
+            this.m2.object3D.getWorldPosition(this.p2);
+            
+            let distance = this.p1.distanceTo( this.p2 );
+            this.cylinderGroup1.lookAt( this.p2 );            
+            this.cylinder1.scale.set(1,1,distance);
+            this.cylinder1.visible = true;
+        }
+        else
+        {
+            this.cylinder1.visible = false;
+        }
+		
+        if ( markerVisible["m2"] && markerVisible["m3"] )
+        {
+            this.m2.object3D.getWorldPosition(this.p2);
+            this.m3.object3D.getWorldPosition(this.p3);
+            
+            let distance = this.p2.distanceTo( this.p3 );
+            this.cylinderGroup2.lookAt( this.p3 );            
+            this.cylinder2.scale.set(1,1,distance);
+            this.cylinder2.visible = true;
+        }
+        else
+        {
+            this.cylinder2.visible = false;
+        }
+		
+        if ( markerVisible["m3"] && markerVisible["m4"] )
+        {
+            this.m3.object3D.getWorldPosition(this.p3);
+            this.m4.object3D.getWorldPosition(this.p4);
+            
+            let distance = this.p3.distanceTo( this.p4 );
+            this.cylinderGroup3.lookAt( this.p4 );            
+            this.cylinder3.scale.set(1,1,distance);
+            this.cylinder3.visible = true;
+        }
+        else
+        {
+            this.cylinder3.visible = false;
+        }
     }
 });
 
