@@ -50,10 +50,12 @@ AFRAME.registerComponent('run', {
         this.cylinder1 = new THREE.Mesh( geometry, material );
         this.cylinder2 = new THREE.Mesh( geometry, material );
         this.cylinder3 = new THREE.Mesh( geometry, material );
+		
         this.cylinderGroup0 = document.querySelector('#cylinderGroup0').object3D;
-        this.cylinderGroup1 = document.querySelector('#cylinderGroup0').object3D;
-        this.cylinderGroup2 = document.querySelector('#cylinderGroup0').object3D;
-        this.cylinderGroup3 = document.querySelector('#cylinderGroup0').object3D;
+        this.cylinderGroup1 = document.querySelector('#cylinderGroup1').object3D;
+        this.cylinderGroup2 = document.querySelector('#cylinderGroup2').object3D;
+        this.cylinderGroup3 = document.querySelector('#cylinderGroup3').object3D;
+		
         this.cylinderGroup0.add( this.cylinder0 );
         this.cylinderGroup1.add( this.cylinder1 );
         this.cylinderGroup2.add( this.cylinder2 );
