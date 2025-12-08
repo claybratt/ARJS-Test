@@ -1,0 +1,246 @@
+<!doctype HTML>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/dev/aframe/build/aframe-ar.js"></script>
+  </head>
+
+  <body style="margin: 0px; overflow: hidden;">
+
+    <script>
+      // how long (ms) we keep objects after losing marker tracking
+      const VISIBILITY_TIMEOUT = 3000;
+
+      // per-marker state: visible + lastSeen timestamp
+      const markerState = {
+        m0: { visible: false, lastSeen: 0 },
+        m1: { visible: false, lastSeen: 0 },
+        m2: { visible: false, lastSeen: 0 },
+        m3: { visible: false, lastSeen: 0 },
+        m4: { visible: false, lastSeen: 0 }
+      };
+
+      AFRAME.registerComponent('registerevents', {
+        init: function () {
+          const marker = this.el;
+          const id = marker.id;
+
+          marker.addEventListener('markerFound', () => {
+            const now = performance.now();
+            if (markerState[id]) {
+              markerState[id].visible = true;
+              markerState[id].lastSeen = now;
+            }
+          });
+
+          marker.addEventListener('markerLost', () => {
+            const now = performance.now();
+            if (markerState[id]) {
+              markerState[id].visible = false;
+              // keep lastSeen as the time it was last seen
+              markerState[id].lastSeen = now;
+            }
+          });
+        }
+      });
+
+      AFRAME.registerComponent('run', {
+        init: function () {
+          // marker entities
+          this.m0 = document.querySelector("#m0");
+          this.m1 = document.querySelector("#m1");
+          this.m2 = document.querySelector("#m2");
+          this.m3 = document.querySelector("#m3");
+          this.m4 = document.querySelector("#m4");
+
+          // follower entities for persistent cubes/spheres
+          this.f0 = document.querySelector("#follower-m0").object3D;
+          this.f1 = document.querySelector("#follower-m1").object3D;
+          this.f2 = document.querySelector("#follower-m2").object3D;
+          this.f3 = document.querySelector("#follower-m3").object3D;
+          this.f4 = document.querySelector("#follower-m4").object3D;
+
+          // reusable vectors for last known positions
+          this.p0 = new THREE.Vector3();
+          this.p1 = new THREE.Vector3();
+          this.p2 = new THREE.Vector3();
+          this.p3 = new THREE.Vector3();
+          this.p4 = new THREE.Vector3();
+
+          // cylinder geometry/material
+          const geometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 12);
+          geometry.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0.5, 0));
+          geometry.applyMatrix4(
+            new THREE.Matrix4().makeRotationX(THREE.MathUtils.degToRad(90))
+          );
+          const material = new THREE.MeshLambertMaterial({ color: 0xFF0000 });
+
+          // cylinders between markers
+          this.cylinder0 = new THREE.Mesh(geometry, material); // m0-m1
+          this.cylinder1 = new THREE.Mesh(geometry, material); // m1-m2
+          this.cylinder2 = new THREE.Mesh(geometry, material); // m2-m3
+          this.cylinder3 = new THREE.Mesh(geometry, material); // m3-m4
+
+          this.cylinderGroup0 = document.querySelector('#cylinderGroup0').object3D;
+          this.cylinderGroup1 = document.querySelector('#cylinderGroup1').object3D;
+          this.cylinderGroup2 = document.querySelector('#cylinderGroup2').object3D;
+          this.cylinderGroup3 = document.querySelector('#cylinderGroup3').object3D;
+
+          this.cylinderGroup0.add(this.cylinder0);
+          this.cylinderGroup1.add(this.cylinder1);
+          this.cylinderGroup2.add(this.cylinder2);
+          this.cylinderGroup3.add(this.cylinder3);
+
+          // initially hide cylinders
+          this.cylinder0.visible = false;
+          this.cylinder1.visible = false;
+          this.cylinder2.visible = false;
+          this.cylinder3.visible = false;
+        },
+
+        _markerWithinTimeout(id, now) {
+          const state = markerState[id];
+          if (!state) return false;
+          return (now - state.lastSeen) < VISIBILITY_TIMEOUT;
+        },
+
+        tick: function (time, deltaTime) {
+          const now = performance.now();
+
+          // --- update marker positions when visible and move follower spheres ---
+
+          if (markerState.m0.visible) {
+            this.m0.object3D.getWorldPosition(this.p0);
+            this.f0.position.copy(this.p0);
+          }
+          if (markerState.m1.visible) {
+            this.m1.object3D.getWorldPosition(this.p1);
+            this.f1.position.copy(this.p1);
+          }
+          if (markerState.m2.visible) {
+            this.m2.object3D.getWorldPosition(this.p2);
+            this.f2.position.copy(this.p2);
+          }
+          if (markerState.m3.visible) {
+            this.m3.object3D.getWorldPosition(this.p3);
+            this.f3.position.copy(this.p3);
+          }
+          if (markerState.m4.visible) {
+            this.m4.object3D.getWorldPosition(this.p4);
+            this.f4.position.copy(this.p4);
+          }
+
+          // --- show/hide follower spheres based on timeout ---
+
+          this.f0.visible = this._markerWithinTimeout('m0', now);
+          this.f1.visible = this._markerWithinTimeout('m1', now);
+          this.f2.visible = this._markerWithinTimeout('m2', now);
+          this.f3.visible = this._markerWithinTimeout('m3', now);
+          this.f4.visible = this._markerWithinTimeout('m4', now);
+
+          // --- cylinders: use last known positions, but only show if both ends
+          //     have been seen within VISIBILITY_TIMEOUT ---
+
+          // m0-m1
+          if (this._markerWithinTimeout('m0', now) && this._markerWithinTimeout('m1', now)) {
+            const distance = this.p0.distanceTo(this.p1);
+            this.cylinderGroup0.position.copy(this.p0);
+            this.cylinderGroup0.lookAt(this.p1);
+            this.cylinder0.scale.set(1, 1, distance);
+            this.cylinder0.visible = true;
+          } else {
+            this.cylinder0.visible = false;
+          }
+
+          // m1-m2
+          if (this._markerWithinTimeout('m1', now) && this._markerWithinTimeout('m2', now)) {
+            const distance = this.p1.distanceTo(this.p2);
+            this.cylinderGroup1.position.copy(this.p1);
+            this.cylinderGroup1.lookAt(this.p2);
+            this.cylinder1.scale.set(1, 1, distance);
+            this.cylinder1.visible = true;
+          } else {
+            this.cylinder1.visible = false;
+          }
+
+          // m2-m3
+          if (this._markerWithinTimeout('m2', now) && this._markerWithinTimeout('m3', now)) {
+            const distance = this.p2.distanceTo(this.p3);
+            this.cylinderGroup2.position.copy(this.p2);
+            this.cylinderGroup2.lookAt(this.p3);
+            this.cylinder2.scale.set(1, 1, distance);
+            this.cylinder2.visible = true;
+          } else {
+            this.cylinder2.visible = false;
+          }
+
+          // m3-m4
+          if (this._markerWithinTimeout('m3', now) && this._markerWithinTimeout('m4', now)) {
+            const distance = this.p3.distanceTo(this.p4);
+            this.cylinderGroup3.position.copy(this.p3);
+            this.cylinderGroup3.lookAt(this.p4);
+            this.cylinder3.scale.set(1, 1, distance);
+            this.cylinder3.visible = true;
+          } else {
+            this.cylinder3.visible = false;
+          }
+        }
+      });
+    </script>
+
+    <a-scene
+      embedded
+      vr-mode-ui="enabled: false;"
+      arjs="debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 4x4_BCH_13_5_5; minConfidence: 0;"
+    >
+      <a-assets>
+        <img id="grid" src="images/border.png" />
+      </a-assets>
+
+      <!-- Original markers (no longer hold the spheres, just IDs & events) -->
+      <a-marker type="barcode" value="0" id="m0" registerevents>
+        <a-entity id="cylinderGroup0"></a-entity>
+      </a-marker>
+
+      <a-marker type="barcode" value="1" id="m1" registerevents>
+        <a-entity id="cylinderGroup1"></a-entity>
+      </a-marker>
+
+      <a-marker type="barcode" value="2" id="m2" registerevents>
+        <a-entity id="cylinderGroup2"></a-entity>
+      </a-marker>
+
+      <a-marker type="barcode" value="3" id="m3" registerevents>
+        <a-entity id="cylinderGroup3"></a-entity>
+      </a-marker>
+
+      <a-marker type="barcode" value="4" id="m4" registerevents>
+        <a-entity id="cylinderGroup4"></a-entity>
+      </a-marker>
+
+      <!-- Followers: persistent spheres that track last known marker positions -->
+      <a-entity id="follower-m0">
+        <a-sphere radius="0.10" color="red"></a-sphere>
+      </a-entity>
+
+      <a-entity id="follower-m1">
+        <a-sphere radius="0.10" color="red"></a-sphere>
+      </a-entity>
+
+      <a-entity id="follower-m2">
+        <a-sphere radius="0.10" color="red"></a-sphere>
+      </a-entity>
+
+      <a-entity id="follower-m3">
+        <a-sphere radius="0.10" color="red"></a-sphere>
+      </a-entity>
+
+      <a-entity id="follower-m4">
+        <a-sphere radius="0.10" color="red"></a-sphere>
+      </a-entity>
+
+      <a-entity camera></a-entity>
+      <a-entity run></a-entity>
+    </a-scene>
+  </body>
+</html>
