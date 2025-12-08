@@ -80,7 +80,7 @@
           this.cylinder2 = new THREE.Mesh(geometry, material); // m2-m3
           this.cylinder3 = new THREE.Mesh(geometry, material); // m3-m4
 
-          // groups are now direct children of the scene, not markers
+          // groups are direct children of the scene (world space)
           this.cylinderGroup0 = document.querySelector('#cylinderGroup0').object3D;
           this.cylinderGroup1 = document.querySelector('#cylinderGroup1').object3D;
           this.cylinderGroup2 = document.querySelector('#cylinderGroup2').object3D;
@@ -101,6 +101,11 @@
         _markerWithinTimeout(id, now) {
           const state = markerState[id];
           if (!state) return false;
+
+          // If it's currently visible, always treat as "within timeout"
+          if (state.visible) return true;
+
+          // If it's not visible, check how long ago we last saw it
           return (now - state.lastSeen) < VISIBILITY_TIMEOUT;
         },
 
@@ -112,22 +117,27 @@
           if (markerState.m0.visible) {
             this.m0.object3D.getWorldPosition(this.p0);
             this.f0.position.copy(this.p0);
+            markerState.m0.lastSeen = now;
           }
           if (markerState.m1.visible) {
             this.m1.object3D.getWorldPosition(this.p1);
             this.f1.position.copy(this.p1);
+            markerState.m1.lastSeen = now;
           }
           if (markerState.m2.visible) {
             this.m2.object3D.getWorldPosition(this.p2);
             this.f2.position.copy(this.p2);
+            markerState.m2.lastSeen = now;
           }
           if (markerState.m3.visible) {
             this.m3.object3D.getWorldPosition(this.p3);
             this.f3.position.copy(this.p3);
+            markerState.m3.lastSeen = now;
           }
           if (markerState.m4.visible) {
             this.m4.object3D.getWorldPosition(this.p4);
             this.f4.position.copy(this.p4);
+            markerState.m4.lastSeen = now;
           }
 
           // --- show/hide follower spheres based on timeout ---
@@ -196,11 +206,8 @@
         <img id="grid" src="images/border.png" />
       </a-assets>
 
-      <!-- Markers: now ONLY handle detection, no cylinders inside them -->
-      <a-marker type="barcode" value="0" id="m0" registerevents>
-        <!-- you can keep a small marker-attached visual if you want -->
-      </a-marker>
-
+      <!-- Markers: handle detection only -->
+      <a-marker type="barcode" value="0" id="m0" registerevents></a-marker>
       <a-marker type="barcode" value="1" id="m1" registerevents></a-marker>
       <a-marker type="barcode" value="2" id="m2" registerevents></a-marker>
       <a-marker type="barcode" value="3" id="m3" registerevents></a-marker>
