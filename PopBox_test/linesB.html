@@ -37,7 +37,6 @@
             const now = performance.now();
             if (markerState[id]) {
               markerState[id].visible = false;
-              // keep lastSeen as the time it was last seen
               markerState[id].lastSeen = now;
             }
           });
@@ -53,14 +52,14 @@
           this.m3 = document.querySelector("#m3");
           this.m4 = document.querySelector("#m4");
 
-          // follower entities for persistent cubes/spheres
+          // follower entities for persistent spheres (world space)
           this.f0 = document.querySelector("#follower-m0").object3D;
           this.f1 = document.querySelector("#follower-m1").object3D;
           this.f2 = document.querySelector("#follower-m2").object3D;
           this.f3 = document.querySelector("#follower-m3").object3D;
           this.f4 = document.querySelector("#follower-m4").object3D;
 
-          // reusable vectors for last known positions
+          // reusable vectors for last known positions (world space)
           this.p0 = new THREE.Vector3();
           this.p1 = new THREE.Vector3();
           this.p2 = new THREE.Vector3();
@@ -81,6 +80,7 @@
           this.cylinder2 = new THREE.Mesh(geometry, material); // m2-m3
           this.cylinder3 = new THREE.Mesh(geometry, material); // m3-m4
 
+          // groups are now direct children of the scene, not markers
           this.cylinderGroup0 = document.querySelector('#cylinderGroup0').object3D;
           this.cylinderGroup1 = document.querySelector('#cylinderGroup1').object3D;
           this.cylinderGroup2 = document.querySelector('#cylinderGroup2').object3D;
@@ -107,7 +107,7 @@
         tick: function (time, deltaTime) {
           const now = performance.now();
 
-          // --- update marker positions when visible and move follower spheres ---
+          // --- update last known positions when markers are visible ---
 
           if (markerState.m0.visible) {
             this.m0.object3D.getWorldPosition(this.p0);
@@ -138,8 +138,7 @@
           this.f3.visible = this._markerWithinTimeout('m3', now);
           this.f4.visible = this._markerWithinTimeout('m4', now);
 
-          // --- cylinders: use last known positions, but only show if both ends
-          //     have been seen within VISIBILITY_TIMEOUT ---
+          // --- cylinders use last known positions and are in world space ---
 
           // m0-m1
           if (this._markerWithinTimeout('m0', now) && this._markerWithinTimeout('m1', now)) {
@@ -197,28 +196,17 @@
         <img id="grid" src="images/border.png" />
       </a-assets>
 
-      <!-- Original markers (no longer hold the spheres, just IDs & events) -->
+      <!-- Markers: now ONLY handle detection, no cylinders inside them -->
       <a-marker type="barcode" value="0" id="m0" registerevents>
-        <a-entity id="cylinderGroup0"></a-entity>
+        <!-- you can keep a small marker-attached visual if you want -->
       </a-marker>
 
-      <a-marker type="barcode" value="1" id="m1" registerevents>
-        <a-entity id="cylinderGroup1"></a-entity>
-      </a-marker>
+      <a-marker type="barcode" value="1" id="m1" registerevents></a-marker>
+      <a-marker type="barcode" value="2" id="m2" registerevents></a-marker>
+      <a-marker type="barcode" value="3" id="m3" registerevents></a-marker>
+      <a-marker type="barcode" value="4" id="m4" registerevents></a-marker>
 
-      <a-marker type="barcode" value="2" id="m2" registerevents>
-        <a-entity id="cylinderGroup2"></a-entity>
-      </a-marker>
-
-      <a-marker type="barcode" value="3" id="m3" registerevents>
-        <a-entity id="cylinderGroup3"></a-entity>
-      </a-marker>
-
-      <a-marker type="barcode" value="4" id="m4" registerevents>
-        <a-entity id="cylinderGroup4"></a-entity>
-      </a-marker>
-
-      <!-- Followers: persistent spheres that track last known marker positions -->
+      <!-- Followers: persistent spheres in world space -->
       <a-entity id="follower-m0">
         <a-sphere radius="0.10" color="red"></a-sphere>
       </a-entity>
@@ -238,6 +226,12 @@
       <a-entity id="follower-m4">
         <a-sphere radius="0.10" color="red"></a-sphere>
       </a-entity>
+
+      <!-- Cylinder groups: direct children of scene (world space) -->
+      <a-entity id="cylinderGroup0"></a-entity>
+      <a-entity id="cylinderGroup1"></a-entity>
+      <a-entity id="cylinderGroup2"></a-entity>
+      <a-entity id="cylinderGroup3"></a-entity>
 
       <a-entity camera></a-entity>
       <a-entity run></a-entity>
