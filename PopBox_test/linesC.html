@@ -5,7 +5,7 @@
     <script src="https://raw.githack.com/AR-js-org/AR.js/dev/aframe/build/aframe-ar.js"></script>
   </head>
 
-  <body style="margin: 0px; overflow: hidden;">
+  <body style="margin: 0; overflow: hidden;">
 
     <script>
       // how long (ms) we keep objects after losing marker tracking
@@ -66,9 +66,9 @@
           const cylGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 12);
           cylGeometry.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0.5, 0));
           cylGeometry.applyMatrix4(
-            new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(90))
+            new THREE.Matrix4().makeRotationX(THREE.MathUtils.degToRad(90))
           );
-          const cylMaterial = new THREE.MeshLambertMaterial({ color: 0xFF0000 });
+          const cylMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
 
           // cylinders between markers (1-2, 2-3, 3-4)
           this.cylinder12 = new THREE.Mesh(cylGeometry, cylMaterial);
@@ -105,7 +105,6 @@
             0, 1, 2,   // first triangle
             0, 2, 3    // second triangle
           ]);
-          rectGeometry.computeVertexNormals();
 
           const rectMaterial = new THREE.MeshBasicMaterial({
             color: 0x00ff00,
@@ -218,7 +217,6 @@
             pos[9]  = this.p4.x; pos[10] = this.p4.y; pos[11] = this.p4.z; // v3 = m4
 
             this.rectGeometry.attributes.position.needsUpdate = true;
-            this.rectGeometry.computeVertexNormals();
             this.rectMesh.visible = true;
           } else {
             this.rectMesh.visible = false;
@@ -232,9 +230,9 @@
       vr-mode-ui="enabled: false;"
       arjs="debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 4x4_BCH_13_5_5; minConfidence: 0;"
     >
-      <a-assets>
-        <img id="grid" src="images/border.png" />
-      </a-assets>
+      <!-- simple light so we see cylinders nicely -->
+      <a-entity light="type: directional; intensity: 0.8;" position="0 1 0"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.4;"></a-entity>
 
       <!-- Markers: 1–4 only -->
       <a-marker type="barcode" value="1" id="m1" registerevents></a-marker>
