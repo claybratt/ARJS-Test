@@ -89,18 +89,39 @@
           this.cylinder23.visible = false;
           this.cylinder34.visible = false;
 
-          // ---------- RECTANGLE PLANE SETUP ----------
+          // ---------- RECTANGLE (TRUE QUAD) SETUP ----------
 
-          this.rectPlane = document.querySelector('#rectPlane').object3D;
-          this.rectPlane.visible = false;
+          this.rectGroup = document.querySelector('#rectGroup').object3D;
 
-          // temp objects for orientation math
-          this.center = new THREE.Vector3();
-          this.right = new THREE.Vector3();
-          this.up = new THREE.Vector3();
-          this.normal = new THREE.Vector3();
-          this.basisMatrix = new THREE.Matrix4();
-          this.tempQuat = new THREE.Quaternion();
+          // 4 vertices, xyz each
+          const rectPositions = new Float32Array(4 * 3);
+          const rectGeometry = new THREE.BufferGeometry();
+          rectGeometry.setAttribute(
+            'position',
+            new THREE.BufferAttribute(rectPositions, 3)
+          );
+          rectGeometry.setIndex([
+            0, 1, 2,   // first triangle
+            0, 2, 3    // second triangle
+          ]);
+
+          const rectMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ff00,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.4
+          });
+
+          const rectMesh = new THREE.Mesh(rectGeometry, rectMaterial);
+          rectMesh.visible = false;
+          // make sure it doesn't disappear due to bad bounding box / culling
+          rectMesh.frustumCulled = false;
+
+          this.rectPositions = rectPositions;
+          this.rectGeometry = rectGeometry;
+          this.rectMesh = rectMesh;
+
+          this.rectGroup.add(rectMesh);
         },
 
         _markerWithinTimeout(id, now) {
@@ -182,7 +203,7 @@
             this.cylinder34.visible = false;
           }
 
-          // ---------- RECTANGLE PLANE UPDATE (m1, m2, m3, m4) ----------
+          // ---------- RECTANGLE UPDATE (m1, m2, m3, m4) ----------
 
           const quadOk =
             this._markerWithinTimeout('m1', now) &&
@@ -191,47 +212,24 @@
             this._markerWithinTimeout('m4', now);
 
           if (quadOk) {
-            // center = average of four points
-            this.center.set(0, 0, 0)
-              .add(this.p1)
-              .add(this.p2)
-              .add(this.p3)
-              .add(this.p4)
-              .multiplyScalar(0.25);
+            const pos = this.rectPositions;
 
-            // Right vector: from m1 to m2
-            this.right.subVectors(this.p2, this.p1);
-            const width = this.right.length();
-            if (width > 0.0001) this.right.normalize();
+            // Set each vertex to exactly each marker position (world space).
+            // Order them so they walk around the shape:
+            // v0 = m1, v1 = m2, v2 = m3, v3 = m4
+            pos[0]  = this.p1.x; pos[1]  = this.p1.y; pos[2]  = this.p1.z;
+            pos[3]  = this.p2.x; pos[4]  = this.p2.y; pos[5]  = this.p2.z;
+            pos[6]  = this.p3.x; pos[7]  = this.p3.y; pos[8]  = this.p3.z;
+            pos[9]  = this.p4.x; pos[10] = this.p4.y; pos[11] = this.p4.z;
 
-            // Up vector: from m1 to m4
-            this.up.subVectors(this.p4, this.p1);
-            const height = this.up.length();
-            if (height > 0.0001) this.up.normalize();
+            this.rectGeometry.attributes.position.needsUpdate = true;
+            // update normals & bounds in case you care about lighting / culling
+            this.rectGeometry.computeVertexNormals();
+            this.rectGeometry.computeBoundingSphere();
 
-            // Normal = right × up
-            this.normal.crossVectors(this.right, this.up);
-            if (this.normal.lengthSq() < 0.000001) {
-              // Degenerate case, don't draw
-              this.rectPlane.visible = false;
-              return;
-            }
-            this.normal.normalize();
-
-            // Build basis matrix (columns = right, up, normal)
-            this.basisMatrix.makeBasis(this.right, this.up, this.normal);
-            this.tempQuat.setFromRotationMatrix(this.basisMatrix);
-
-            // Apply transform to plane
-            this.rectPlane.position.copy(this.center);
-            this.rectPlane.quaternion.copy(this.tempQuat);
-
-            // Plane geometry in A-Frame is 1x1 by default, so scale to width/height
-            this.rectPlane.scale.set(width, height, 1);
-
-            this.rectPlane.visible = true;
+            this.rectMesh.visible = true;
           } else {
-            this.rectPlane.visible = false;
+            this.rectMesh.visible = false;
           }
         }
       });
@@ -274,16 +272,8 @@
       <a-entity id="cylinderGroup23"></a-entity>
       <a-entity id="cylinderGroup34"></a-entity>
 
-      <!-- Rect plane: world-space plane we stretch between markers -->
-      <a-plane
-        id="rectPlane"
-        color="#00ff00"
-        opacity="0.4"
-        side="double"
-        visible="false"
-        width="1"
-        height="1"
-      ></a-plane>
+      <!-- Rect group: quad mesh is attached here as a world-space object -->
+      <a-entity id="rectGroup"></a-entity>
 
       <a-entity camera></a-entity>
       <a-entity run></a-entity>
