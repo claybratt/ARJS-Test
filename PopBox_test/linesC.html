@@ -13,7 +13,6 @@
 
       // per-marker state: visible + lastSeen timestamp
       const markerState = {
-        m0: { visible: false, lastSeen: 0 },
         m1: { visible: false, lastSeen: 0 },
         m2: { visible: false, lastSeen: 0 },
         m3: { visible: false, lastSeen: 0 },
@@ -46,21 +45,18 @@
       AFRAME.registerComponent('run', {
         init: function () {
           // marker entities
-          this.m0 = document.querySelector("#m0");
           this.m1 = document.querySelector("#m1");
           this.m2 = document.querySelector("#m2");
           this.m3 = document.querySelector("#m3");
           this.m4 = document.querySelector("#m4");
 
           // follower entities for persistent spheres (world space)
-          this.f0 = document.querySelector("#follower-m0").object3D;
           this.f1 = document.querySelector("#follower-m1").object3D;
           this.f2 = document.querySelector("#follower-m2").object3D;
           this.f3 = document.querySelector("#follower-m3").object3D;
           this.f4 = document.querySelector("#follower-m4").object3D;
 
           // reusable vectors for last known positions (world space)
-          this.p0 = new THREE.Vector3();
           this.p1 = new THREE.Vector3();
           this.p2 = new THREE.Vector3();
           this.p3 = new THREE.Vector3();
@@ -70,32 +66,28 @@
           const cylGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 12);
           cylGeometry.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0.5, 0));
           cylGeometry.applyMatrix4(
-            new THREE.Matrix4().makeRotationX(THREE.MathUtils.degToRad(90))
+            new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(90))
           );
           const cylMaterial = new THREE.MeshLambertMaterial({ color: 0xFF0000 });
 
-          // cylinders between markers
-          this.cylinder0 = new THREE.Mesh(cylGeometry, cylMaterial); // m0-m1
-          this.cylinder1 = new THREE.Mesh(cylGeometry, cylMaterial); // m1-m2
-          this.cylinder2 = new THREE.Mesh(cylGeometry, cylMaterial); // m2-m3
-          this.cylinder3 = new THREE.Mesh(cylGeometry, cylMaterial); // m3-m4
+          // cylinders between markers (1-2, 2-3, 3-4)
+          this.cylinder12 = new THREE.Mesh(cylGeometry, cylMaterial);
+          this.cylinder23 = new THREE.Mesh(cylGeometry, cylMaterial);
+          this.cylinder34 = new THREE.Mesh(cylGeometry, cylMaterial);
 
           // groups are direct children of the scene (world space)
-          this.cylinderGroup0 = document.querySelector('#cylinderGroup0').object3D;
-          this.cylinderGroup1 = document.querySelector('#cylinderGroup1').object3D;
-          this.cylinderGroup2 = document.querySelector('#cylinderGroup2').object3D;
-          this.cylinderGroup3 = document.querySelector('#cylinderGroup3').object3D;
+          this.cylinderGroup12 = document.querySelector('#cylinderGroup12').object3D;
+          this.cylinderGroup23 = document.querySelector('#cylinderGroup23').object3D;
+          this.cylinderGroup34 = document.querySelector('#cylinderGroup34').object3D;
 
-          this.cylinderGroup0.add(this.cylinder0);
-          this.cylinderGroup1.add(this.cylinder1);
-          this.cylinderGroup2.add(this.cylinder2);
-          this.cylinderGroup3.add(this.cylinder3);
+          this.cylinderGroup12.add(this.cylinder12);
+          this.cylinderGroup23.add(this.cylinder23);
+          this.cylinderGroup34.add(this.cylinder34);
 
           // initially hide cylinders
-          this.cylinder0.visible = false;
-          this.cylinder1.visible = false;
-          this.cylinder2.visible = false;
-          this.cylinder3.visible = false;
+          this.cylinder12.visible = false;
+          this.cylinder23.visible = false;
+          this.cylinder34.visible = false;
 
           // ---------- RECTANGLE (QUAD) SETUP ----------
 
@@ -145,11 +137,6 @@
 
           // --- update last known positions when markers are visible ---
 
-          if (markerState.m0.visible) {
-            this.m0.object3D.getWorldPosition(this.p0);
-            this.f0.position.copy(this.p0);
-            markerState.m0.lastSeen = now;
-          }
           if (markerState.m1.visible) {
             this.m1.object3D.getWorldPosition(this.p1);
             this.f1.position.copy(this.p1);
@@ -173,7 +160,6 @@
 
           // --- show/hide follower spheres based on timeout ---
 
-          this.f0.visible = this._markerWithinTimeout('m0', now);
           this.f1.visible = this._markerWithinTimeout('m1', now);
           this.f2.visible = this._markerWithinTimeout('m2', now);
           this.f3.visible = this._markerWithinTimeout('m3', now);
@@ -181,66 +167,55 @@
 
           // --- cylinders use last known positions and are in world space ---
 
-          // m0-m1
-          if (this._markerWithinTimeout('m0', now) && this._markerWithinTimeout('m1', now)) {
-            const distance = this.p0.distanceTo(this.p1);
-            this.cylinderGroup0.position.copy(this.p0);
-            this.cylinderGroup0.lookAt(this.p1);
-            this.cylinder0.scale.set(1, 1, distance);
-            this.cylinder0.visible = true;
-          } else {
-            this.cylinder0.visible = false;
-          }
-
           // m1-m2
           if (this._markerWithinTimeout('m1', now) && this._markerWithinTimeout('m2', now)) {
             const distance = this.p1.distanceTo(this.p2);
-            this.cylinderGroup1.position.copy(this.p1);
-            this.cylinderGroup1.lookAt(this.p2);
-            this.cylinder1.scale.set(1, 1, distance);
-            this.cylinder1.visible = true;
+            this.cylinderGroup12.position.copy(this.p1);
+            this.cylinderGroup12.lookAt(this.p2);
+            this.cylinder12.scale.set(1, 1, distance);
+            this.cylinder12.visible = true;
           } else {
-            this.cylinder1.visible = false;
+            this.cylinder12.visible = false;
           }
 
           // m2-m3
           if (this._markerWithinTimeout('m2', now) && this._markerWithinTimeout('m3', now)) {
             const distance = this.p2.distanceTo(this.p3);
-            this.cylinderGroup2.position.copy(this.p2);
-            this.cylinderGroup2.lookAt(this.p3);
-            this.cylinder2.scale.set(1, 1, distance);
-            this.cylinder2.visible = true;
+            this.cylinderGroup23.position.copy(this.p2);
+            this.cylinderGroup23.lookAt(this.p3);
+            this.cylinder23.scale.set(1, 1, distance);
+            this.cylinder23.visible = true;
           } else {
-            this.cylinder2.visible = false;
+            this.cylinder23.visible = false;
           }
 
           // m3-m4
           if (this._markerWithinTimeout('m3', now) && this._markerWithinTimeout('m4', now)) {
             const distance = this.p3.distanceTo(this.p4);
-            this.cylinderGroup3.position.copy(this.p3);
-            this.cylinderGroup3.lookAt(this.p4);
-            this.cylinder3.scale.set(1, 1, distance);
-            this.cylinder3.visible = true;
+            this.cylinderGroup34.position.copy(this.p3);
+            this.cylinderGroup34.lookAt(this.p4);
+            this.cylinder34.scale.set(1, 1, distance);
+            this.cylinder34.visible = true;
           } else {
-            this.cylinder3.visible = false;
+            this.cylinder34.visible = false;
           }
 
-          // ---------- RECTANGLE UPDATE (m0, m1, m2, m3) ----------
+          // ---------- RECTANGLE UPDATE (m1, m2, m3, m4) ----------
 
           const quadOk =
-            this._markerWithinTimeout('m0', now) &&
             this._markerWithinTimeout('m1', now) &&
             this._markerWithinTimeout('m2', now) &&
-            this._markerWithinTimeout('m3', now);
+            this._markerWithinTimeout('m3', now) &&
+            this._markerWithinTimeout('m4', now);
 
           if (quadOk) {
             const pos = this.rectPositions;
 
-            // Order: p0, p1, p2, p3 -> a loop; adjust order if you want different winding
-            pos[0]  = this.p0.x; pos[1]  = this.p0.y; pos[2]  = this.p0.z; // v0 = m0
-            pos[3]  = this.p1.x; pos[4]  = this.p1.y; pos[5]  = this.p1.z; // v1 = m1
-            pos[6]  = this.p2.x; pos[7]  = this.p2.y; pos[8]  = this.p2.z; // v2 = m2
-            pos[9]  = this.p3.x; pos[10] = this.p3.y; pos[11] = this.p3.z; // v3 = m3
+            // Order vertices around the quad: m1 -> m2 -> m3 -> m4
+            pos[0]  = this.p1.x; pos[1]  = this.p1.y; pos[2]  = this.p1.z; // v0 = m1
+            pos[3]  = this.p2.x; pos[4]  = this.p2.y; pos[5]  = this.p2.z; // v1 = m2
+            pos[6]  = this.p3.x; pos[7]  = this.p3.y; pos[8]  = this.p3.z; // v2 = m3
+            pos[9]  = this.p4.x; pos[10] = this.p4.y; pos[11] = this.p4.z; // v3 = m4
 
             this.rectGeometry.attributes.position.needsUpdate = true;
             this.rectGeometry.computeVertexNormals();
@@ -261,18 +236,13 @@
         <img id="grid" src="images/border.png" />
       </a-assets>
 
-      <!-- Markers: handle detection only -->
-      <a-marker type="barcode" value="0" id="m0" registerevents></a-marker>
+      <!-- Markers: 1–4 only -->
       <a-marker type="barcode" value="1" id="m1" registerevents></a-marker>
       <a-marker type="barcode" value="2" id="m2" registerevents></a-marker>
       <a-marker type="barcode" value="3" id="m3" registerevents></a-marker>
       <a-marker type="barcode" value="4" id="m4" registerevents></a-marker>
 
       <!-- Followers: persistent spheres in world space -->
-      <a-entity id="follower-m0">
-        <a-sphere radius="0.10" color="red"></a-sphere>
-      </a-entity>
-
       <a-entity id="follower-m1">
         <a-sphere radius="0.10" color="red"></a-sphere>
       </a-entity>
@@ -290,10 +260,9 @@
       </a-entity>
 
       <!-- Cylinder groups: direct children of scene (world space) -->
-      <a-entity id="cylinderGroup0"></a-entity>
-      <a-entity id="cylinderGroup1"></a-entity>
-      <a-entity id="cylinderGroup2"></a-entity>
-      <a-entity id="cylinderGroup3"></a-entity>
+      <a-entity id="cylinderGroup12"></a-entity>
+      <a-entity id="cylinderGroup23"></a-entity>
+      <a-entity id="cylinderGroup34"></a-entity>
 
       <!-- Rect group: holder for the quad mesh (world space) -->
       <a-entity id="rectGroup"></a-entity>
