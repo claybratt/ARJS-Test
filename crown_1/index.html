@@ -5,8 +5,8 @@
     <body style="margin : 0px; overflow: hidden;">
         <a-scene vr-mode-ui="enabled: false;" embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 4x4_BCH_13_5_5;'>
             <a-marker  type='pattern' url='pattern-crown_1_qr.patt' >
-                <a-entity position='0 1 0' rotation='90 0 0' obj-model="obj: url(Crown.obj); mtl: url(Crown.mtl)"></a-entity>
-                <a-entity position='0 1 0' rotation='90 0 0' obj-model="obj: url(PirateProto.obj); mtl: url(PirateProto.mtl)"></a-entity>
+                <a-entity position='0 1 0' rotation='-90 0 0' obj-model="obj: url(Crown.obj); mtl: url(Crown.mtl)" animation="property: rotation; to: -90 360 0; dur: 5000; easing: linear; loop: true"></a-entity>
+                <a-entity position='0 1 0' rotation='-90 0 0' obj-model="obj: url(PirateProto.obj); mtl: url(PirateProto.mtl)" animation="property: rotation; to: -90 -360 0; dur: 5000; easing: linear; loop: true"></a-entity>
             </a-marker>
             <a-entity camera></a-entity>
         </a-scene>
