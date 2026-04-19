@@ -22,9 +22,10 @@
         });
     </script>
     <body style="margin : 0px; overflow: hidden;">
-        <a-scene vr-mode-ui="enabled: false;" renderer="logarithmicDepthBuffer: true" embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 4x4_BCH_13_5_5;'>
+        <a-scene vr-mode-ui="enabled: false;" renderer="logarithmicDepthBuffer: true" embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 4x4_BCH_13_5_5;'>
             <a-assets>
                 <video src="Eddy_Eye.mp4" preload="auto" id="vid" response-type="arraybuffer" loop crossorigin webkit-playsinline autoplay muted playsinline></video>
+                <a-asset-item id="cube" src="cube.glb"></a-asset-item>
                 <a-asset-item id="bamboo" src="bamboo.glb"></a-asset-item>
                 <a-asset-item id="ivy" src="ivy.glb"></a-asset-item>
                 <a-asset-item id="tigerlily" src="tigerlily.glb"></a-asset-item>
@@ -34,6 +35,10 @@
                 <a-asset-item id="tulip" src="tulip.glb"></a-asset-item>
             </a-assets>
 
+            <a-marker  type='barcode' value='0' videohandler>
+                <a-video src="#vid" position='0 0 0' rotation='90 0 180' width='1' height='1' ></a-video>
+                <a-entity gltf-model="#cube" position="0 0 0" rotation="0 0 0" scale="1 1 1" animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true" visible="true"></a-entity>
+            </a-marker>
             <a-marker  type='barcode' value='1' videohandler>
                 <a-video src="#vid" position='0 0 0' rotation='90 0 180' width='1' height='1' ></a-video>
                 <a-entity gltf-model="#bamboo" position="0 0 0" rotation="0 0 0" scale="1 1 1" animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true" visible="true"></a-entity>
