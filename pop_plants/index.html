@@ -6,31 +6,63 @@
     <script src="https://raw.githack.com/AR-js-org/AR.js/dev/aframe/build/aframe-ar.js"></script>
 
     <script>
-        AFRAME.registerComponent('marker-persistence', {
+        AFRAME.registerComponent('sticky-marker', {
             schema: {
+                target: { type: 'selector' },
                 hideDelay: { type: 'number', default: 1500 }
             },
 
             init: function () {
-                this.hideTimeout = null;
+                this.isTracked = false;
+                this.lastSeen = 0;
+
+                this.tempPosition = new THREE.Vector3();
+                this.tempQuaternion = new THREE.Quaternion();
+                this.tempScale = new THREE.Vector3();
 
                 this.el.addEventListener('markerFound', () => {
-                    if (this.hideTimeout) {
-                        clearTimeout(this.hideTimeout);
-                        this.hideTimeout = null;
+                    this.isTracked = true;
+                    this.lastSeen = Date.now();
+
+                    if (this.data.target) {
+                        this.data.target.object3D.visible = true;
                     }
-                    this.el.object3D.visible = true;
                 });
 
                 this.el.addEventListener('markerLost', () => {
-                    if (this.hideTimeout) {
-                        clearTimeout(this.hideTimeout);
-                    }
-
-                    this.hideTimeout = setTimeout(() => {
-                        this.el.object3D.visible = false;
-                    }, this.data.hideDelay);
+                    this.isTracked = false;
+                    this.lastSeen = Date.now();
                 });
+            },
+
+            tick: function () {
+                const markerObj = this.el.object3D;
+                const targetEl = this.data.target;
+
+                if (!targetEl) return;
+
+                const targetObj = targetEl.object3D;
+
+                if (this.isTracked) {
+                    markerObj.updateMatrixWorld(true);
+
+                    markerObj.getWorldPosition(this.tempPosition);
+                    markerObj.getWorldQuaternion(this.tempQuaternion);
+                    markerObj.getWorldScale(this.tempScale);
+
+                    targetObj.visible = true;
+                    targetObj.position.copy(this.tempPosition);
+                    targetObj.quaternion.copy(this.tempQuaternion);
+                    targetObj.scale.copy(this.tempScale);
+
+                    this.lastSeen = Date.now();
+                } else {
+                    const elapsed = Date.now() - this.lastSeen;
+
+                    if (elapsed > this.data.hideDelay) {
+                        targetObj.visible = false;
+                    }
+                }
             }
         });
     </script>
@@ -54,164 +86,104 @@
             <a-asset-item id="tulip" src="tulip.glb"></a-asset-item>
         </a-assets>
 
+        <!-- Models live outside markers so they can persist through short tracking loss -->
+        <a-entity id="model0" gltf-model="#cube" visible="false"></a-entity>
+        <a-entity id="model1" gltf-model="#bamboo" visible="false"></a-entity>
+        <a-entity id="model2" gltf-model="#ivy" visible="false"></a-entity>
+        <a-entity id="model3" gltf-model="#tigerlily" visible="false"></a-entity>
+        <a-entity id="model4" gltf-model="#snakeplant" visible="false"></a-entity>
+        <a-entity id="model5" gltf-model="#monstera" visible="false"></a-entity>
+        <a-entity id="model6" gltf-model="#cactus" visible="false"></a-entity>
+        <a-entity id="model7" gltf-model="#tulip" visible="false"></a-entity>
+
+        <!-- Markers only drive tracking -->
         <a-marker
             type="barcode"
             value="0"
             emitevents="true"
             smooth="true"
-            smoothCount="15"
-            smoothTolerance="0.05"
+            smoothCount="12"
+            smoothTolerance="0.01"
             smoothThreshold="5"
-            marker-persistence="hideDelay: 1500"
-        >
-            <a-entity
-                gltf-model="#cube"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="1 1 1"
-                visible="true"
-            ></a-entity>
-        </a-marker>
+            sticky-marker="target: #model0; hideDelay: 1500"
+        ></a-marker>
 
         <a-marker
             type="barcode"
             value="1"
             emitevents="true"
             smooth="true"
-            smoothCount="15"
-            smoothTolerance="0.05"
+            smoothCount="12"
+            smoothTolerance="0.01"
             smoothThreshold="5"
-            marker-persistence="hideDelay: 1500"
-        >
-            <a-entity
-                gltf-model="#bamboo"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="1 1 1"
-                animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
-                visible="true"
-            ></a-entity>
-        </a-marker>
+            sticky-marker="target: #model1; hideDelay: 1500"
+        ></a-marker>
 
         <a-marker
             type="barcode"
             value="2"
             emitevents="true"
             smooth="true"
-            smoothCount="15"
-            smoothTolerance="0.05"
+            smoothCount="12"
+            smoothTolerance="0.01"
             smoothThreshold="5"
-            marker-persistence="hideDelay: 1500"
-        >
-            <a-entity
-                gltf-model="#ivy"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="1 1 1"
-                animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
-                visible="true"
-            ></a-entity>
-        </a-marker>
+            sticky-marker="target: #model2; hideDelay: 1500"
+        ></a-marker>
 
         <a-marker
             type="barcode"
             value="3"
             emitevents="true"
             smooth="true"
-            smoothCount="15"
-            smoothTolerance="0.05"
+            smoothCount="12"
+            smoothTolerance="0.01"
             smoothThreshold="5"
-            marker-persistence="hideDelay: 1500"
-        >
-            <a-entity
-                gltf-model="#tigerlily"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="1 1 1"
-                animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
-                visible="true"
-            ></a-entity>
-        </a-marker>
+            sticky-marker="target: #model3; hideDelay: 1500"
+        ></a-marker>
 
         <a-marker
             type="barcode"
             value="4"
             emitevents="true"
             smooth="true"
-            smoothCount="15"
-            smoothTolerance="0.05"
+            smoothCount="12"
+            smoothTolerance="0.01"
             smoothThreshold="5"
-            marker-persistence="hideDelay: 1500"
-        >
-            <a-entity
-                gltf-model="#snakeplant"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="1 1 1"
-                animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
-                visible="true"
-            ></a-entity>
-        </a-marker>
+            sticky-marker="target: #model4; hideDelay: 1500"
+        ></a-marker>
 
         <a-marker
             type="barcode"
             value="5"
             emitevents="true"
             smooth="true"
-            smoothCount="15"
-            smoothTolerance="0.05"
+            smoothCount="12"
+            smoothTolerance="0.01"
             smoothThreshold="5"
-            marker-persistence="hideDelay: 1500"
-        >
-            <a-entity
-                gltf-model="#monstera"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="1 1 1"
-                animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
-                visible="true"
-            ></a-entity>
-        </a-marker>
+            sticky-marker="target: #model5; hideDelay: 1500"
+        ></a-marker>
 
         <a-marker
             type="barcode"
             value="6"
             emitevents="true"
             smooth="true"
-            smoothCount="15"
-            smoothTolerance="0.05"
+            smoothCount="12"
+            smoothTolerance="0.01"
             smoothThreshold="5"
-            marker-persistence="hideDelay: 1500"
-        >
-            <a-entity
-                gltf-model="#cactus"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="1 1 1"
-                animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
-                visible="true"
-            ></a-entity>
-        </a-marker>
+            sticky-marker="target: #model6; hideDelay: 1500"
+        ></a-marker>
 
         <a-marker
             type="barcode"
             value="7"
             emitevents="true"
             smooth="true"
-            smoothCount="15"
-            smoothTolerance="0.05"
+            smoothCount="12"
+            smoothTolerance="0.01"
             smoothThreshold="5"
-            marker-persistence="hideDelay: 1500"
-        >
-            <a-entity
-                gltf-model="#tulip"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="1 1 1"
-                animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
-                visible="true"
-            ></a-entity>
-        </a-marker>
+            sticky-marker="target: #model7; hideDelay: 1500"
+        ></a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
