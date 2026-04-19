@@ -27,6 +27,11 @@
                 <video src="Eddy_Eye.mp4" preload="auto" id="vid" response-type="arraybuffer" loop crossorigin webkit-playsinline autoplay muted playsinline></video>
                 <a-asset-item id="bamboo" src="bamboo.glb"></a-asset-item>
                 <a-asset-item id="ivy" src="ivy.glb"></a-asset-item>
+                <a-asset-item id="tigerlily" src="tigerlily.glb"></a-asset-item>
+                <a-asset-item id="snakeplant" src="snakeplant.glb"></a-asset-item>
+                <a-asset-item id="monstera" src="monstera.glb"></a-asset-item>
+                <a-asset-item id="cactus" src="cactus.glb"></a-asset-item>
+                <a-asset-item id="tulip" src="tulip.glb"></a-asset-item>
             </a-assets>
 
             <a-marker  type='barcode' value='1' videohandler>
@@ -37,7 +42,26 @@
                 <a-video src="#vid" position='0 0 0' rotation='90 0 180' width='1' height='1' ></a-video>
                 <a-entity gltf-model="#ivy" position="0 0 0" rotation="0 0 0" scale="1 1 1" animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true" visible="true"></a-entity>
             </a-marker>
-
+            <a-marker  type='barcode' value='3' videohandler>
+                <a-video src="#vid" position='0 0 0' rotation='90 0 180' width='1' height='1' ></a-video>
+                <a-entity gltf-model="#tigerlily" position="0 0 0" rotation="0 0 0" scale="1 1 1" animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true" visible="true"></a-entity>
+            </a-marker>
+            <a-marker  type='barcode' value='4' videohandler>
+                <a-video src="#vid" position='0 0 0' rotation='90 0 180' width='1' height='1' ></a-video>
+                <a-entity gltf-model="#snakeplant" position="0 0 0" rotation="0 0 0" scale="1 1 1" animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true" visible="true"></a-entity>
+            </a-marker>
+            <a-marker  type='barcode' value='5' videohandler>
+                <a-video src="#vid" position='0 0 0' rotation='90 0 180' width='1' height='1' ></a-video>
+                <a-entity gltf-model="#monstera" position="0 0 0" rotation="0 0 0" scale="1 1 1" animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true" visible="true"></a-entity>
+            </a-marker>
+            <a-marker  type='barcode' value='6' videohandler>
+                <a-video src="#vid" position='0 0 0' rotation='90 0 180' width='1' height='1' ></a-video>
+                <a-entity gltf-model="#cactus" position="0 0 0" rotation="0 0 0" scale="1 1 1" animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true" visible="true"></a-entity>
+            </a-marker>
+            <a-marker  type='barcode' value='7' videohandler>
+                <a-video src="#vid" position='0 0 0' rotation='90 0 180' width='1' height='1' ></a-video>
+                <a-entity gltf-model="#tulip" position="0 0 0" rotation="0 0 0" scale="1 1 1" animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true" visible="true"></a-entity>
+            </a-marker>
             <a-entity camera></a-entity>
         </a-scene>
     </body>
