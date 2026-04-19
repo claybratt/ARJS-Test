@@ -22,7 +22,7 @@
         });
     </script>
     <body style="margin : 0px; overflow: hidden;">
-        <a-scene vr-mode-ui="enabled: false;" embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 4x4_BCH_13_5_5;'>
+        <a-scene vr-mode-ui="enabled: false;" renderer="logarithmicDepthBuffer: true" embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 4x4_BCH_13_5_5;'>
             <a-assets>
                 <video src="Eddy_Eye.mp4" preload="auto" id="vid" response-type="arraybuffer" loop crossorigin webkit-playsinline autoplay muted playsinline></video>
                 <a-asset-item id="bamboo" src="bamboo.glb"></a-asset-item>
