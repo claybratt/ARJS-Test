@@ -245,10 +245,10 @@
       <a-entity light="type: ambient; intensity: 0.4;"></a-entity>
 
       <!-- Markers: 1–4 only -->
-      <a-marker type="barcode" value="1" id="m1" registerevents></a-marker>
-      <a-marker type="barcode" value="2" id="m2" registerevents></a-marker>
-      <a-marker type="barcode" value="3" id="m3" registerevents></a-marker>
-      <a-marker type="barcode" value="4" id="m4" registerevents></a-marker>
+      <a-marker type="barcode" value="1" id="m1" min-confidence='0.1' registerevents></a-marker>
+      <a-marker type="barcode" value="2" id="m2" min-confidence='0.1' registerevents></a-marker>
+      <a-marker type="barcode" value="3" id="m3" min-confidence='0.1' registerevents></a-marker>
+      <a-marker type="barcode" value="4" id="m4" min-confidence='0.1' registerevents></a-marker>
 
       <!-- Followers: persistent spheres in world space -->
       <a-entity id="follower-m1">
