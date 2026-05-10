@@ -1,22 +1,564 @@
-<!DOCTYPE html>
-<html>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/dev/aframe/build/aframe-ar.js"></script>
-    <body style="margin : 0px; overflow: hidden;">
-        <a-scene embedded vr-mode-ui="enabled: false;" renderer="logarithmicDepthBuffer: true" arjs="debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 4x4_BCH_13_5_5;">
-            <a-marker type='pattern' url='pattern-crown_1_qr.patt' min-confidence='0.1'>
-                <a-entity
-                    position='0 0.5 0.5' 
-                    rotation='-90 0 0'>
-                    <a-entity obj-model="obj: url(Crown.obj); mtl: url(Crown.mtl)"></a-entity>
-                </a-entity>
-                <a-entity 
-                    position='0 0.5 0' 
-                    rotation='-90 0 0' >
-                    <a-entity obj-model="obj: url(PirateProto.obj); mtl: url(PirateProto.mtl)" animation__spin="property: rotation; from: 0 0 0; to: 0 360 0; dur: 5000; easing: linear; loop: true"></a-entity>
-                </a-entity>
-            </a-marker>
-            <a-entity camera></a-entity>
-        </a-scene>
-    </body>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Realtime Webcam Depth Map Demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #121a30;
+      --panel-2: #18233f;
+      --text: #eef3ff;
+      --muted: #a7b5d6;
+      --accent: #7fb3ff;
+      --danger: #ff8e8e;
+      --ok: #96f7b2;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #162142 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+    }
+
+    .sub {
+      margin: 0 0 24px;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 72ch;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .controls {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    select, input[type="range"], button {
+      width: 100%;
+    }
+
+    select, button {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover:not(:disabled) { transform: translateY(-1px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat .k {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat .v {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .status {
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(127,179,255,0.08);
+      border: 1px solid rgba(127,179,255,0.18);
+      color: var(--text);
+      line-height: 1.45;
+      min-height: 50px;
+    }
+
+    .status.error {
+      background: rgba(255,142,142,0.08);
+      border-color: rgba(255,142,142,0.22);
+      color: #ffd7d7;
+    }
+
+    .viewer {
+      display: grid;
+      gap: 16px;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .pane-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    video, canvas {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 14px;
+      display: block;
+      object-fit: cover;
+    }
+
+    .notes {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.94rem;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: rgba(255,255,255,0.08);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 980px) {
+      .grid, .stage { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Realtime Webcam Depth Map</h1>
+    <p class="sub">
+      This demo captures your webcam, runs monocular depth estimation in the browser, and draws a live depth map.
+      It estimates <strong>relative depth</strong> from a normal RGB camera, so it is useful for effects and interaction,
+      but it is not the same as true hardware-measured depth.
+    </p>
+
+    <div class="grid">
+      <section class="card controls">
+        <div>
+          <strong>Controls</strong>
+        </div>
+
+        <label>
+          Model
+          <select id="modelSelect">
+            <option value="onnx-community/depth-anything-v2-small">Depth Anything V2 Small</option>
+            <option value="Xenova/depth-anything-small-hf">Depth Anything Small</option>
+          </select>
+        </label>
+
+        <label>
+          Backend
+          <select id="backendSelect">
+            <option value="auto">Auto</option>
+            <option value="webgpu">WebGPU</option>
+            <option value="wasm">WASM</option>
+          </select>
+        </label>
+
+        <label>
+          Inference FPS cap: <span id="fpsCapValue">10</span>
+          <input id="fpsCap" type="range" min="1" max="30" value="10" />
+        </label>
+
+        <label>
+          Input width: <span id="inputWidthValue">320</span> px
+          <input id="inputWidth" type="range" min="160" max="640" step="32" value="320" />
+        </label>
+
+        <label>
+          Smoothing: <span id="smoothingValue">0.35</span>
+          <input id="smoothing" type="range" min="0" max="0.9" step="0.05" value="0.35" />
+        </label>
+
+        <div class="row">
+          <button id="startBtn">Start camera</button>
+          <button id="stopBtn" disabled>Stop</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span class="k">Render FPS</span>
+            <span class="v" id="renderFps">0.0</span>
+          </div>
+          <div class="stat">
+            <span class="k">Inference ms</span>
+            <span class="v" id="inferenceMs">0</span>
+          </div>
+          <div class="stat">
+            <span class="k">Backend in use</span>
+            <span class="v" id="backendInUse">-</span>
+          </div>
+          <div class="stat">
+            <span class="k">Model state</span>
+            <span class="v" id="modelState">idle</span>
+          </div>
+        </div>
+
+        <div id="status" class="status">Click <strong>Start camera</strong> to load the model and begin inference.</div>
+
+        <div class="notes">
+          <p><strong>Tips</strong></p>
+          <p>Start with <code>Auto</code> backend. If your browser supports WebGPU, it is often much faster.</p>
+          <p>Reduce input width or FPS cap if the page feels slow.</p>
+          <p>Browsers typically require <code>https://</code> or <code>localhost</code> for webcam access.</p>
+        </div>
+      </section>
+
+      <section class="viewer">
+        <div class="stage">
+          <div class="card">
+            <div class="pane-title">
+              <span>Webcam</span>
+              <span id="cameraSize">-</span>
+            </div>
+            <video id="video" playsinline muted></video>
+          </div>
+
+          <div class="card">
+            <div class="pane-title">
+              <span>Estimated depth map</span>
+              <span id="depthSize">-</span>
+            </div>
+            <canvas id="depthCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="card notes">
+          <p>
+            The grayscale output is normalized per frame: brighter and darker regions represent relative depth structure,
+            not guaranteed metric distance in meters. That makes it great for blur, parallax, masking, and interaction demos.
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script type="module">
+    import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.1';
+
+    const els = {
+      video: document.getElementById('video'),
+      depthCanvas: document.getElementById('depthCanvas'),
+      status: document.getElementById('status'),
+      startBtn: document.getElementById('startBtn'),
+      stopBtn: document.getElementById('stopBtn'),
+      modelSelect: document.getElementById('modelSelect'),
+      backendSelect: document.getElementById('backendSelect'),
+      fpsCap: document.getElementById('fpsCap'),
+      fpsCapValue: document.getElementById('fpsCapValue'),
+      inputWidth: document.getElementById('inputWidth'),
+      inputWidthValue: document.getElementById('inputWidthValue'),
+      smoothing: document.getElementById('smoothing'),
+      smoothingValue: document.getElementById('smoothingValue'),
+      renderFps: document.getElementById('renderFps'),
+      inferenceMs: document.getElementById('inferenceMs'),
+      backendInUse: document.getElementById('backendInUse'),
+      modelState: document.getElementById('modelState'),
+      cameraSize: document.getElementById('cameraSize'),
+      depthSize: document.getElementById('depthSize'),
+    };
+
+    els.fpsCap.addEventListener('input', () => {
+      els.fpsCapValue.textContent = els.fpsCap.value;
+    });
+    els.inputWidth.addEventListener('input', () => {
+      els.inputWidthValue.textContent = els.inputWidth.value;
+    });
+    els.smoothing.addEventListener('input', () => {
+      els.smoothingValue.textContent = Number(els.smoothing.value).toFixed(2);
+    });
+
+    const depthCtx = els.depthCanvas.getContext('2d', { willReadFrequently: true });
+    const inputCanvas = document.createElement('canvas');
+    const inputCtx = inputCanvas.getContext('2d', { willReadFrequently: true });
+
+    let stream = null;
+    let depthEstimator = null;
+    let running = false;
+    let processing = false;
+    let animationId = 0;
+    let lastInferenceTime = 0;
+    let lastFpsTime = performance.now();
+    let framesSinceFps = 0;
+    let previousDepth = null;
+
+    function setStatus(message, isError = false) {
+      els.status.innerHTML = message;
+      els.status.classList.toggle('error', isError);
+    }
+
+    function getPreferredDevice() {
+      const requested = els.backendSelect.value;
+      if (requested === 'webgpu' || requested === 'wasm') return requested;
+      return ('gpu' in navigator) ? 'webgpu' : 'wasm';
+    }
+
+    async function loadModel() {
+      if (depthEstimator) return depthEstimator;
+
+      const modelId = els.modelSelect.value;
+      const device = getPreferredDevice();
+      els.modelState.textContent = 'loading';
+      els.backendInUse.textContent = device;
+      setStatus(`Loading <code>${modelId}</code> on <code>${device}</code>... The first run can take a while because model files are downloaded and cached.`);
+
+      env.allowLocalModels = false;
+
+      try {
+        depthEstimator = await pipeline('depth-estimation', modelId, {
+          device,
+        });
+      } catch (error) {
+        if (device === 'webgpu') {
+          setStatus('WebGPU load failed. Falling back to <code>wasm</code>...', false);
+          depthEstimator = await pipeline('depth-estimation', modelId, {
+            device: 'wasm',
+          });
+          els.backendInUse.textContent = 'wasm';
+        } else {
+          throw error;
+        }
+      }
+
+      els.modelState.textContent = 'ready';
+      setStatus('Model ready. Depth estimation is running live from your webcam.');
+      return depthEstimator;
+    }
+
+    async function startCamera() {
+      if (stream) return;
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
+
+      els.video.srcObject = stream;
+      await els.video.play();
+      els.cameraSize.textContent = `${els.video.videoWidth} x ${els.video.videoHeight}`;
+    }
+
+    function stopCamera() {
+      if (!stream) return;
+      for (const track of stream.getTracks()) track.stop();
+      stream = null;
+      els.video.srcObject = null;
+      els.cameraSize.textContent = '-';
+    }
+
+    function normalizeToGrayscale(data, smoothing) {
+      let min = Infinity;
+      let max = -Infinity;
+      for (let i = 0; i < data.length; i++) {
+        const value = data[i];
+        if (value < min) min = value;
+        if (value > max) max = value;
+      }
+
+      const range = Math.max(1e-6, max - min);
+      const out = new Uint8ClampedArray(data.length);
+
+      if (!previousDepth || previousDepth.length !== data.length) {
+        previousDepth = new Float32Array(data.length);
+      }
+
+      for (let i = 0; i < data.length; i++) {
+        const normalized = 255 * (1 - ((data[i] - min) / range));
+        previousDepth[i] = previousDepth[i] * smoothing + normalized * (1 - smoothing);
+        out[i] = previousDepth[i];
+      }
+      return out;
+    }
+
+    function drawDepthMap(gray, width, height) {
+      els.depthCanvas.width = width;
+      els.depthCanvas.height = height;
+      els.depthSize.textContent = `${width} x ${height}`;
+
+      const imageData = depthCtx.createImageData(width, height);
+      for (let i = 0; i < gray.length; i++) {
+        const v = gray[i];
+        const j = i * 4;
+        imageData.data[j + 0] = v;
+        imageData.data[j + 1] = v;
+        imageData.data[j + 2] = v;
+        imageData.data[j + 3] = 255;
+      }
+      depthCtx.putImageData(imageData, 0, 0);
+    }
+
+    async function processFrame() {
+      if (!running || processing || !depthEstimator || els.video.readyState < 2) {
+        animationId = requestAnimationFrame(processFrame);
+        return;
+      }
+
+      const now = performance.now();
+      const fpsCap = Number(els.fpsCap.value);
+      const minFrameGap = 1000 / fpsCap;
+      if (now - lastInferenceTime < minFrameGap) {
+        animationId = requestAnimationFrame(processFrame);
+        return;
+      }
+
+      processing = true;
+      lastInferenceTime = now;
+
+      try {
+        const targetWidth = Number(els.inputWidth.value);
+        const scale = targetWidth / els.video.videoWidth;
+        const targetHeight = Math.max(64, Math.round(els.video.videoHeight * scale));
+        inputCanvas.width = targetWidth;
+        inputCanvas.height = targetHeight;
+        inputCtx.drawImage(els.video, 0, 0, targetWidth, targetHeight);
+
+        const t0 = performance.now();
+        const output = await depthEstimator(inputCanvas);
+        const dt = performance.now() - t0;
+        els.inferenceMs.textContent = dt.toFixed(1);
+
+        const depthTensor = output.predicted_depth ?? output.depth ?? output;
+        const dims = depthTensor.dims || [targetHeight, targetWidth];
+        const height = dims[dims.length - 2];
+        const width = dims[dims.length - 1];
+        const data = depthTensor.data || depthTensor;
+
+        const gray = normalizeToGrayscale(data, Number(els.smoothing.value));
+        drawDepthMap(gray, width, height);
+
+        framesSinceFps += 1;
+        const elapsed = performance.now() - lastFpsTime;
+        if (elapsed >= 500) {
+          els.renderFps.textContent = ((framesSinceFps * 1000) / elapsed).toFixed(1);
+          framesSinceFps = 0;
+          lastFpsTime = performance.now();
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus(`Inference failed: <code>${error.message}</code>`, true);
+        running = false;
+      } finally {
+        processing = false;
+        animationId = requestAnimationFrame(processFrame);
+      }
+    }
+
+    async function start() {
+      els.startBtn.disabled = true;
+      els.stopBtn.disabled = false;
+      els.modelSelect.disabled = true;
+      els.backendSelect.disabled = true;
+
+      try {
+        await startCamera();
+        await loadModel();
+        running = true;
+        framesSinceFps = 0;
+        lastFpsTime = performance.now();
+        cancelAnimationFrame(animationId);
+        animationId = requestAnimationFrame(processFrame);
+      } catch (error) {
+        console.error(error);
+        setStatus(`Startup failed: <code>${error.message}</code>`, true);
+        stop();
+      }
+    }
+
+    function stop() {
+      running = false;
+      processing = false;
+      cancelAnimationFrame(animationId);
+      stopCamera();
+      els.startBtn.disabled = false;
+      els.stopBtn.disabled = true;
+      els.modelSelect.disabled = false;
+      els.backendSelect.disabled = false;
+      els.renderFps.textContent = '0.0';
+      els.inferenceMs.textContent = '0';
+      els.depthSize.textContent = '-';
+      els.modelState.textContent = depthEstimator ? 'ready' : 'idle';
+      setStatus('Stopped. Click <strong>Start camera</strong> to run again.');
+    }
+
+    els.startBtn.addEventListener('click', start);
+    els.stopBtn.addEventListener('click', stop);
+
+    window.addEventListener('beforeunload', () => {
+      stopCamera();
+      cancelAnimationFrame(animationId);
+    });
+  </script>
+</body>
 </html>
